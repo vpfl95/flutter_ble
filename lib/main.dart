@@ -41,7 +41,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   BluetoothDevice _connectedDevice;
   BluetoothDevice latestDevice;
-  //BluetoothDeviceState deviceState;
   List<BluetoothService> _services;
   final _writeController = TextEditingController();
   List<dynamic> notifyValue = new List<dynamic>();
@@ -51,7 +50,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 //  AudioCache player = new AudioCache();
   bool notify_flag;
   Timer refreshTimer;
-  final Stream<int> stream = Stream.periodic(Duration(seconds: 1), (int x) => x); // 1초에 한번씩 업데이트
 
   //앱 foreground background 상태 확인
   @override
@@ -168,7 +166,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                     style: TextStyle(color: Colors.white),
                   ),
                   onPressed: () async {
-                    onRefreshTimer();
                     startServiceInPlatform();
                     widget.flutterBlue.stopScan();
                     try {
@@ -282,30 +279,9 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           height: 20,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-//            child: StreamBuilder<int>(
-//              stream: stream,
-//              builder: (BuildContext context, AsyncSnapshot<int> snapshot){
-//                return RaisedButton(
-//                  child: Text('NOTIFY', style: TextStyle(color: Colors.white)),
-//                  onPressed: () async {
-//                    //onRefreshTimer();
-//                    notify_flag=true;
-//                    characteristic.value.listen((value) {
-//                      widget.readValues[characteristic.uuid] = value;
-//                      if (isSelected2[0] == true) {
-//                        notifyValue.add(value);
-//                      }
-//                    });
-//                    await characteristic.setNotifyValue(true);
-//                    //setState(() {});
-//                  },
-//                );
-//              }
-//            ),
             child: RaisedButton(
               child: Text('NOTIFY', style: TextStyle(color: Colors.white)),
               onPressed: () async {
-                //onRefreshTimer();
                 notify_flag=true;
                 characteristic.value.listen((value) {
                   widget.readValues[characteristic.uuid] = value;
@@ -348,10 +324,18 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 ),
                 Row(
                   children: <Widget>[
-                    Expanded(
-                      child: Text('Value: ' +
-                          widget.readValues[characteristic.uuid].toString()),
+                    StreamBuilder<List>(
+                      stream: characteristic.value,
+                      builder: (c, snapshot) {
+                        return Expanded(
+                          child: Text('Value: ' + snapshot.data.toString()),
+                        );
+                      }
                     ),
+//                    Expanded(
+//                      child: Text('Value: ' +
+//                          widget.readValues[characteristic.uuid].toString()),
+//                    ),
                   ],
                 ),
                 Divider(),
@@ -378,13 +362,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             builder: (c, snapshot) {
               // deviceState = snapshot.data;
               if(snapshot.data==BluetoothDeviceState.disconnected){
-                //offRefreshTimer();
+
                 latestDevice.connect();
               }
-//            if(snapshot.data==BluetoothDeviceState.connecting){
-//              //onRefreshTimer();
-//
-//            }
+
               return ListTile(
                 leading: (snapshot.data == BluetoothDeviceState.connected)
                     ? Icon(Icons.bluetooth_connected)
@@ -456,7 +437,6 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                         style:(TextStyle(color: Colors.white)),),
                       color: Colors.blue,
                       onPressed: () async {
-                        offRefreshTimer();
                         notify_flag=false;
                         notifyValue.clear();
                         _connectedDevice.disconnect();
